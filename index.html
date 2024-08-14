@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rainyatrium</title>
+    <link id="favicon" rel="icon" type="image/x-icon" href="/assets/atrium/friend_sunder_favicon.png">
+    <link href="/css/style.css" rel="stylesheet" type="text/css" media="all">
+  </head>
+  
+<style>
+@media only screen and (max-width: 800px) {
+body {
+  color: #353535;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-family: UglyQua;
+  font-size: 110%;
+}
+.hubMenu {
+  text-align:left !important;
+  max-width:100% !important;
+  margin:10% 10%;
+}
+.hubButton {
+ font-size: 150%;
+}
+
+}
+</style>
+
+<body>
+<div style="position:absolute;background-color:yellow;opacity:0.3;"> active construction zone please wear head protection / return later!!</div>
+<div class = "plantBackground">  </div>
+<div class = "friendDiv"><img class = "friend" destination="armchair" src="assets/atrium/friend/friend_sunder.png"></div>
+<div class = "wrapper">
+
+  <div class = "hubMenu">
+    <img style="max-width:100%;height:auto"src="assets/atrium/logo temp large.png" alt="rainyatrium" > 
+	  <p> welcome to the atrium!
+	  <br> i'm Ana, a mixed media artist from Miami, Florida.
+	  <br> You can't click on the links below to explore my portfolio and projects, because this site is under construction.
+	  <br> contact: ana@rainyatrium.net </p> 
+	  <div style="background-color:rgba(255,255,255,0.4)">
+	    <button class = "hubButton" destination="design"> design <span> some artifice </span></button>
+	    <br><button class = "hubButton" destination="illustration"> illustration <span> drawn things </span></button>
+	    <br><button class = "hubButton" destination="interactive"> interactive <span> click and click </span></button>
+	    <br><button class = "hubButton" destination="sculpture"> sculpture <span> feel the texture </span> </button>
+	    <br><button class = "hubButton" destination="photography"> photography <span> strange locales </span></button>
+	  </div>
+	</div>
+  
+	<div class = "hubContent">
+		<div></div>
+		<p id="debug">
+	</div>
+</div>
+<!-- da iframe type stuff -->
+<script>
+  let hubContent = document.querySelector(".hubContent");
+  hubContent.style.display = "none";
+  let contentActive = false;
+
+  const hubButtonArray = document.getElementsByClassName("hubButton");
+  for(var i = 0; i < hubButtonArray.length; i++) {
+     hubButtonArray[i].addEventListener("click", function() {showContent(this.getAttribute("destination"))});
+  }
+  function showContent(destination) {
+    console.log("i am running without being prompted because fuck you lol");
+    document.getElementById("debug").innerHTML = destination;
+    hubContent.style.display = "inline";
+    contentActive = true;
+  }
+</script>
+<!-- friends -->
+<script> 
+  var friendElement = document.querySelector(".friend")
+  let friends = [];
+  friends[0]="assets/atrium/friend/friend_aaaggg";
+  friends[1]="assets/atrium/friend/friend_alton";
+  friends[2]="assets/atrium/friend/friend_anki";
+  friends[3]="assets/atrium/friend/friend_aszaz";
+  friends[4]="assets/atrium/friend/friend_johnny";
+  friends[5]="assets/atrium/friend/friend_moe";
+  friends[6]="assets/atrium/friend/friend_smile";
+  friends[7]="assets/atrium/friend/friend_spiral";
+  friends[8]="assets/atrium/friend/friend_sunder";
+  friends[9]="assets/atrium/friend/friend_supervisor";
+  friends[10]="assets/atrium/friend/friend_ynekke";
+  let randomFriend = friends[Math.floor(Math.random()*friends.length)];
+  
+  const friendRotate = [
+    {
+        transform: "rotate(0deg)",
+        offset: 0
+    },
+    {
+        transform: "rotate(360deg)",
+        offset: 1
+    }
+    ];
+  
+  friendElement.src = randomFriend+".png";
+  document.getElementById("favicon").href = randomFriend+"_favicon.png";
+
+  let friendAnimation = friendElement.animate(friendRotate, { iterations: Infinity, duration: 10000, fill: "forwards" });
+  friendAnimation.pause();
+  friendElement.addEventListener("mouseover", (event) => {
+    friendAnimation.play();
+  });;
+  friendElement.addEventListener("mouseout", (event) => {
+    friendAnimation.pause();
+  });;
+  
+    friendElement.addEventListener('click', function() {
+    if (!contentActive) {
+      showContent(this.getAttribute("destination"))
+    }
+  });
+</script>
+<!-- hub button animations -->
+<script>
+  //cantharus' animation script
+  const easeOutBounce = [
+    {
+        transform: "translateX(calc(0.1089*var(--buttonBounceAmount)))",
+        offset: 0
+    },
+    {
+        transform: "translateX(calc(0.1089*var(--buttonBounceAmount)))",
+        offset: 0.12
+    },
+    {
+        transform: "translateX(calc(0.4356*var(--buttonBounceAmount)))",
+        offset: 0.24
+    },
+    {
+        transform: "translateX(calc(0.9801*var(--buttonBounceAmount)))",
+        offset: 0.36
+    },
+    {
+        transform: "translateX(calc(0.7502*var(--buttonBounceAmount)))",
+        offset: 0.54
+    },
+    {
+        transform: "translateX(calc(0.9837*var(--buttonBounceAmount)))",
+        offset: 0.74
+    },
+    {
+        transform: "translateX(calc(0.9375*var(--buttonBounceAmount)))",
+        offset: 0.82
+    },
+    {
+        transform: "translateX(calc(0.9934*var(--buttonBounceAmount)))",
+        offset: 0.92
+    },
+    {
+        transform: "translateX(calc(0.9846*var(--buttonBounceAmount)))",
+        offset: 0.96
+    },
+    {
+        transform: "translateX(calc(1*var(--buttonBounceAmount)))",
+        offset: 1
+    }
+];
+  const easeOutBounceRev = [
+    {
+        transform: "translateX(calc(1*var(--buttonBounceAmount)))",
+        offset: 0
+    },
+    {
+        transform: "translateX(calc(0.8911*var(--buttonBounceAmount)))",
+        offset: 0.12
+    },
+    {
+        transform: "translateX(calc(0.5644*var(--buttonBounceAmount)))",
+        offset: 0.24
+    },
+    {
+        transform: "translateX(calc(0.0199*var(--buttonBounceAmount)))",
+        offset: 0.36
+    },
+    {
+        transform: "translateX(calc(0.2498*var(--buttonBounceAmount)))",
+        offset: 0.54
+    },
+    {
+        transform: "translateX(calc(0.0163*var(--buttonBounceAmount)))",
+        offset: 0.74
+    },
+    {
+        transform: "translateX(calc(0.0625*var(--buttonBounceAmount)))",
+        offset: 0.82
+    },
+    {
+        transform: "translateX(calc(0.0066*var(--buttonBounceAmount)))",
+        offset: 0.92
+    },
+    {
+        transform: "translateX(calc(0.0154*var(--buttonBounceAmount)))",
+        offset: 0.96
+    },
+    {
+        transform: "translateX(calc(0*var(--buttonBounceAmount)))",
+        offset: 1
+    }
+];
+  function addHoverAnimations(element) {
+    let anim;
+    element.addEventListener("mouseover", () => {
+        anim?.cancel();
+        anim = element.animate(easeOutBounce, { duration: 500, fill: "forwards" });
+    });
+    element.addEventListener("mouseout", () => {
+        // get the current transform to smoothly transition from current value
+        const transform = getComputedStyle(element).getPropertyValue("transform");
+        anim?.cancel();
+        anim = element.animate(easeOutBounceRev, { duration: 500, fill: "forwards" });
+    });
+  }
+  document.querySelectorAll(".hubButton").forEach(addHoverAnimations);
+</script>
+
+</body>
+</html>

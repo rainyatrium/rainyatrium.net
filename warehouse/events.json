@@ -1,0 +1,159 @@
+{
+    "events": [
+	    {
+            "name": "winter",
+			"monthStart": 1,
+            "dayStart": 1,
+			"monthEnd":3,
+            "dayEnd": 19,
+			"backgroundColor": "#414d63",
+            "layers": [
+                {
+                    "name": "foreground",
+                    "image": "foreground.png",
+                    "sensitivity": 800
+                },
+                {
+                    "name": "midground",
+                    "image": "midground.png",
+                    "sensitivity": 800
+                }
+            ],
+            "customizeButton": {
+                "x": 10,
+                "y": 10,
+                "left": true,
+                "sensitivity": 800
+            },
+            "extraLayouts": [
+                "x",
+                "y",
+                "z"
+            ]
+        },
+        {
+            "name": "spring",
+			"monthStart": 3,
+            "dayStart": 19,
+			"monthEnd":6,
+            "dayEnd": 20,
+			"backgroundColor": "#414d63",
+            "layers": [
+                {
+                    "name": "foreground",
+                    "image": "foreground.png",
+                    "sensitivity": 800
+                },
+                {
+                    "name": "midground",
+                    "image": "midground.png",
+                    "sensitivity": 800
+                }
+            ],
+            "customizeButton": {
+                "x": 10,
+                "y": 10,
+                "left": true,
+                "sensitivity": 800
+            },
+            "extraLayouts": [
+                "x",
+                "y",
+                "z"
+            ]
+        },
+		{
+            "name": "summer",
+			"monthStart": 6,
+            "dayStart": 20,
+			"monthEnd": 9,
+            "dayEnd": 22,
+			"backgroundColor": "#414d63",
+            "layers": [
+                {
+                    "name": "foreground",
+                    "image": "foreground.png",
+                    "sensitivity": 800
+                },
+                {
+                    "name": "midground",
+                    "image": "midground.png",
+                    "sensitivity": 800
+                }
+            ],
+            "customizeButton": {
+                "x": 10,
+                "y": 10,
+                "left": true,
+                "sensitivity": 800
+            },
+            "extraLayouts": [
+                "x",
+                "y",
+                "z"
+            ]
+        },
+        {
+            "name": "fall",
+			"monthStart": 9,
+            "dayStart": 22,
+			"monthEnd": 12,
+            "dayEnd": 1,
+			"backgroundColor": "#414d63",
+            "layers": [
+                {
+                    "name": "foreground",
+                    "image": "foreground.png",
+                    "sensitivity": 800
+                },
+                {
+                    "name": "midground",
+                    "image": "midground.png",
+                    "sensitivity": 800
+                }
+            ],
+            "customizeButton": {
+                "x": 10,
+                "y": 10,
+                "left": true,
+                "sensitivity": 800
+            },
+            "extraLayouts": [
+                "x",
+                "y",
+                "z"
+            ]
+        },
+		{
+            "name": "winter",
+			"monthStart": 12,
+            "dayStart": 1,
+			"monthEnd":12,
+            "dayEnd": 31,
+			"backgroundColor": "#414d63",
+            "layers": [
+                {
+                    "name": "foreground",
+                    "image": "foreground.png",
+                    "sensitivity": 800
+                },
+                {
+                    "name": "midground",
+                    "image": "midground.png",
+                    "sensitivity": 800
+                }
+            ],
+            "customizeButton": {
+                "x": 10,
+                "y": 10,
+                "left": true,
+                "sensitivity": 800
+            },
+            "extraLayouts": [
+                "x",
+                "y",
+                "z"
+            ]
+        }
+    ]
+}

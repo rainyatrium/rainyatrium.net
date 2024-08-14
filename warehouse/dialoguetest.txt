@@ -1,0 +1,13 @@
+[character::soleil||textPresentation::instant]
+<span> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam blandit, eros sit amet finibus blandit, nibh libero placerat purus, a aliquet nisi nulla a risus. Praesent id justo imperdiet libero varius gravida. Maecenas auctor leo elit, a fringilla dui ornare quis. Suspendisse malesuada sapien augue, quis consequat nunc hendrerit ut. In sem ex, interdum vitae convallis et, venenatis et eros. </span>
+<span> Donec efficitur justo non arcu lacinia tincidunt. Proin pharetra maximus lorem, in ultrices dolor tempor condimentum. Nam neque mi, tincidunt eget urna sed, gravida iaculis elit. Aenean pretium, neque eu hendrerit elementum, lacus mi tincidunt turpis, sit amet sollicitudin urna dolor nec ipsum. Vestibulum sagittis euismod odio id condimentum. Integer consectetur feugiat nulla, eu fringilla risus auctor sit amet. Proin auctor non dui et tincidunt. Quisque aliquet sollicitudin ornare.  </span>
+[character::interloper||textPresentation::typed]
+<span> HELLO SOLEIL SOLANGE SOLEIL FROM SOLEIL SOLANGE SOLEIL </span>
+[lineTarget::11]
+
+
+<span> AAH! SKIP! THIS LINE WILL NOT BE READ</span>
+
+[character::attendant||textPresentation::instant]
+<span> WOW. SOLEIL SOLANGE SOLEIL FROM SOLEIL SOLANGE SOLEIL? </span>
+<span> AND INTERLOPER FROM HIT WEB GAME CORRU.OBSERVER.. THAT'S CRAZY! </span>

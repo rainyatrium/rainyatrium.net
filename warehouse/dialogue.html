@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dialogue test zone</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script 
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+  	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  	crossorigin="anonymous">
+  	</script>
+    <script src="dialoguetest.mystere.js"></script>
+    <link href="/css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="/warehouse/dialogue.css" rel="stylesheet" type="text/css" media="all">
+
+  </head>
+  <body>
+    <span style="font-size:1.7em"> dialogue test room </span>
+    <br><span style="font-size:0.9em"> press tilde for debug </span>
+    <div class = "plantBackground">  </div>
+    <div class = "debug"></div>
+    <div class="diagDiv" id="container3"><b> container 3 </b></div>
+    <div class = "wrapper" style="grid-template-columns: 50% auto;">
+      <div class="diagDiv" id="container1"><b>container 1</b></div>
+      <div class="diagDiv" id="container2"><b>container 2</b></div>
+    </div>
+      <script>
+      window.addEventListener("load", function(event) {
+          mysDL.addDialogue("container1","dialoguetest.txt");
+          mysDL.addDialogue("container2","dialoguetest2.txt");
+          mysDL.addDialogue("container3","dialoguetest.txt","single");
+          
+                setInterval(function() {
+            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`,mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line,'dialogue1 line');
+            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`,mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget,'dialogue1 lineTarget');
+            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line`,mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line,'dialogue2 line')
+            //d1full = JSON.stringify(mysDL.dialogueObjectArray.find(({ id }) => id === "container1"));
+            //mysDBG.updateMonitor(`d1full`,d1full,'dialogue1')
+            },100)
+          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`);
+          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line`);
+          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`);
+          mysDBG.addMonitor(`d1full`);
+      })
+      //set our dialogue elements
+
+      //debug
+
+      </script>
+  </body>
+</html>
+

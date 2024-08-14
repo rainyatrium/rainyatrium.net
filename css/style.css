@@ -1,0 +1,160 @@
+/* we use this file for sitewide stuff */
+:root {
+--buttonBounceAmount:8px;
+}
+body {
+  color: #000000;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-family: UglyQua;
+  font-size: 120%;
+  margin:0px;
+}
+
+h1 {
+  color: black;
+  font-family: UglyQua;
+  font-size: 160%;
+}
+.plantBackground{
+  image-rendering:pixelated;
+  position:fixed;
+  z-index: -1;
+  min-height:100vh;
+  min-width:100vw;
+  margin:0;
+  background-image:url('/assets/atrium/bg-large-35percent.gif');
+  opacity:0.9;
+  background-size: 100%;
+  background-position:bottom;
+  background-repeat:no-repeat;
+}
+.wrapper {
+    display:grid;
+    grid-template-columns: 33% auto;
+    max-height:100%;
+    min-height:100%;
+    margin:0px;
+    padding:2%;
+}
+
+.hubMenu {
+  text-align:left;
+}
+.hubButton {
+  margin:1% 0 1% 0;
+  cursor:pointer;
+  background-color: transparent;
+  color: white;
+  outline: none;
+  border: none;
+  font-family: ImpossAccents;
+  font-size:  1.4em;
+  -webkit-text-stroke: 1px #353535;
+}
+.hubButton span {
+  font-size:0.95em;
+  opacity:0.5;
+}
+
+.hubContent {
+  min-width:60%;
+  min-height:90vh;
+  max-height:90vh;
+  background:rgba(255,255,255,0.2);
+  border-top-left-radius: 255px 3px;
+  border-top-right-radius: 3px 225px;
+  border-bottom-right-radius: 225px 3px;
+  border-bottom-left-radius:3px 255px;
+  border:solid 1px #353535;
+  margin: 0% 5% 0% 5%;
+}
+.friendDiv {
+  position:fixed;
+  z-index:77;
+  margin:0%;
+  bottom:0;
+  right:0;
+  max-width:8%;
+  cursor:pointer;
+  transition: transform 0.05s ease;
+}
+.friend {
+  z-index:77;
+  margin:0%;
+  bottom:0;
+  right:0;
+  min-width:100%;
+  max-width:100%;
+  cursor:pointer;
+}
+.friendDiv:active {
+  transform: scale(1.025);
+}
+.hbSpan {
+  transition: transform 0.05s ease;
+}
+.hubButton:active {
+  font-stretch:160%;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
+@keyframes easeOutBounce {
+	0% {
+		transform: translateX(calc(0*var(--buttonBounceAmount)));
+	}
+
+	12% {
+		transform: translateX(calc(0.1089*var(--buttonBounceAmount)));
+	}
+
+	24% {
+		transform: translateX(calc(0.4356*var(--buttonBounceAmount)));
+	}
+
+	36% {
+		transform: translateX(calc(0.9801*var(--buttonBounceAmount)));
+	}
+
+	54% {
+		transform: translateX(calc(0.7502*var(--buttonBounceAmount)));
+	}
+
+	74% {
+		transform: translateX(calc(0.9837*var(--buttonBounceAmount)));
+	}
+
+	82% {
+		transform: translateX(calc(0.9375*var(--buttonBounceAmount)));
+	}
+
+	92% {
+		transform: translateX(calc(0.9934*var(--buttonBounceAmount)));
+	}
+
+	96% {
+		transform: translateX(calc(0.9846*var(--buttonBounceAmount)));
+	}
+
+	100% {
+		transform: translateX(calc(1*var(--buttonBounceAmount)));
+	}
+}
+
+
+@font-face {
+    font-family: UglyQua;
+    src: url(/fonts/UglyQua.ttf);
+}
+
+@font-face {
+    font-family: ImpossAccents;
+    src: url(/fonts/imposs_accents.ttf);
+}

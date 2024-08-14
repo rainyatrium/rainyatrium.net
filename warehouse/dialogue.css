@@ -1,0 +1,60 @@
+:root{
+}
+.wrapper {
+  min-height:70vh !important;
+}
+.diagDiv{
+  margin:1%;
+}
+.dialogueBox.right {
+}
+
+.dialogueElement {
+}
+#container1 {
+  border:1px solid black;
+  min-height:100%;
+}
+#container2 {
+  border:1px solid black;
+  max-height:50%;
+}
+#container3 {
+  border:1px solid black;
+  position:absolute;
+  min-width:40%;
+  max-width:40%;
+  min-height:25%;
+  bottom:5%;
+  right:5%;
+}
+
+.space-mono-regular {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.space-mono-bold {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.space-mono-regular-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.space-mono-bold-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.libre-barcode-39-regular {
+  font-family: "Libre Barcode 39", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
