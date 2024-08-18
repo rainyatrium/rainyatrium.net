@@ -30,9 +30,9 @@
     </div>
       <script>
       window.addEventListener("load", function(event) {
-          mysDL.addDialogue("container1","dialoguetest.txt");
-          mysDL.addDialogue("container2","dialoguetest2.txt");
-          mysDL.addDialogue("container3","dialoguetest.txt","single");
+          mysDL.addDialogue("container1","parsetest.txt");
+          //mysDL.addDialogue("container2","dialoguetest2.txt");
+          //mysDL.addDialogue("container3","dialoguetest.txt","single");
           
                 setInterval(function() {
             mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`,mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line,'dialogue1 line');
@@ -44,7 +44,7 @@
           mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`);
           mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line`);
           mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`);
-          mysDBG.addMonitor(`d1full`);
+          //mysDBG.addMonitor(`d1full`);
       })
       //set our dialogue elements
 
