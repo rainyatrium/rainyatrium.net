@@ -261,15 +261,15 @@ var mysDL = {
                     if (modKey == 'character') {
                       dialogueObject.character = mysDL.characterArray.find(({ name }) => name === value);
                     }
-                }
+                  }
                 //if the key matches any keys in dialogueObject.character, set it
-                for (modKey of Object.keys(dialogueObject.character)) {
-                  if (modKey == key) {
-                    dialogueObject.character[modKey] = value;
+                    for (modKey of Object.keys(dialogueObject.character)) {
+                      if (modKey == key) {
+                        dialogueObject.character[modKey] = value;
+                          }
+                    }
                   }
                 }
-              }
-            }
                           console.log('incrementing line (parse skip)');
               dialogueObject.line++; //skip the line
             }

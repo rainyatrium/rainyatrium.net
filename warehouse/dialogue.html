@@ -30,21 +30,22 @@
     </div>
       <script>
       window.addEventListener("load", function(event) {
-          mysDL.addDialogue("container1","parsetest.txt");
-          //mysDL.addDialogue("container2","dialoguetest2.txt");
-          //mysDL.addDialogue("container3","dialoguetest.txt","single");
+          mys.DLG.addDialogue("container1","parsetest.dlg");
+          //mys.DLG.addDialogue("container2","dialoguetest2.txt");
+          mys.DLG.addDialogue("container3","parsetest.dlg","single");
           
                 setInterval(function() {
-            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`,mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line,'dialogue1 line');
-            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`,mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget,'dialogue1 lineTarget');
-            mysDBG.updateMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line`,mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line,'dialogue2 line')
-            //d1full = JSON.stringify(mysDL.dialogueObjectArray.find(({ id }) => id === "container1"));
-            //mysDBG.updateMonitor(`d1full`,d1full,'dialogue1')
-            },100)
-          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").line`);
-          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container2").line`);
-          mysDBG.addMonitor(`mysDL.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`);
-          //mysDBG.addMonitor(`d1full`);
+            mys.DBG.updateMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").currentLine`,JSON.stringify(mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").currentLine),'dialogue1 line');
+            //mys.DBG.updateMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`,mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget,'dialogue1 lineTarget');
+            //mys.DBG.updateMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container2").line`,mys.DLG.dialogueObjectArray.find(({ id }) => id === "container2").line,'dialogue2 line')
+            //d1full = JSON.stringify(mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1"));
+            //mys.DBG.updateMonitor(`d1full`,d1full,'dialogue1')
+                  
+            },1)
+          mys.DBG.addMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").currentLine`);
+          //mys.DBG.addMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container2").line`);
+          //mys.DBG.addMonitor(`mys.DLG.dialogueObjectArray.find(({ id }) => id === "container1").lineTarget`);
+          //mys.DBG.addMonitor(`d1full`);
       })
       //set our dialogue elements
 

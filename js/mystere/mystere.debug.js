@@ -1,9 +1,9 @@
-//MYSTERE DEBUG (mysDBG)
+//MYSTERE DEBUG (mys.DBG)
 //this is just a little box that i can easily monitor random variables with
-//mysDBG.addMonitor(variable) adds the line in the debug
-//mysDBG.updateMonitor("id",variable) updates the line, to be called as needed
+//mys.DBG.addMonitor(variable) adds the line in the debug
+//mys.DBG.updateMonitor("id",variable) updates the line, to be called as needed
 
-var mysDBG = {
+mys.DBG = {
     //STYLE
   debugStyle: `
     .debug {
@@ -79,9 +79,9 @@ var mysDBG = {
 
 //on window load
 window.addEventListener("load", function(event) {
-  mysDBG.DEBUG();
-  dragElement(document.querySelector(".debug"));
+  mys.DBG.DEBUG();
+  mys.dragElement(document.querySelector(".debug"));
   let styleSheet = document.createElement("style");
-  styleSheet.textContent = mysDBG.debugStyle;
+  styleSheet.textContent = mys.DBG.debugStyle;
   document.head.appendChild(styleSheet);
 })

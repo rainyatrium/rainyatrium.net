@@ -1,4 +1,4 @@
-//MYSTERE DIALOGUE SYSTEM (mysDL)
+//MYSTERE DIALOGUE SYSTEM (mys.DLG)
 /*
 -DIALOGUE is a misnomer because this can be applied to wider contexts, but I can't think of anything better to name it at present
 -designate a dialogue div, and point it to a text file 
@@ -12,17 +12,13 @@
 -typing: enable and disable the typewriter effect
 
 TO-DO:
+add support for NEXT layer picking instead of just the next available
 name/title support
-fix runfunction
-ignore starting whitespace (for prettier organization)
-dialogue option generation
 literally any kind of error handling
 sound support
 set this up to only re-parse if text file has changed
-make function running a bit more consistent
-when finished with lines or on selection segment, remove grabby hand from div
 */
-var mysDL = {
+mys.DLG = {
   // ===VARIABLES & THINGS ===
   //Guy format. we can have a global characters.js elsewhere where we define guys. this should be configurable
   mystereCharacter: function(name, portrait, position, font, fontweight, talksound, css, html) {
@@ -37,32 +33,44 @@ var mysDL = {
   },
   //this function defines a dialogue element.
   //id should be an element id; source should be a filepath/string
-  dialogueObject: function(id,url,format = "sequential") {
+  //dialogueObjectState is tied to the tree hierarchy. properties at the root of dialogueObject are universal.
+  dialogueObjectState: function(){
+    this.textPresentation = "instant";  //instant, typed
+    this.character = new mys.DLG.mystereCharacter(); //currently speaking character
+    this.typeSpeed = 1;                 //typing speed for typing effects
+  },
+  dialogueObject: function(id,url,format = "sequential"){
+    this.state = new mys.DLG.dialogueObjectState(); //properties we want to be attached to the tree
+    this.stateStack = []; //state stack for passing properties around the tree
+    this.lineIndexStack = [0]; //
+    this.lineTreeStack = [];
+    this.currentParent = null;
+    this.currentLine = null;
     this.id = id;                       //id to match the element's
     this.url = url;                     //text file source url
-    this.line = 0;                      //current line
-    this.lineTarget = null;                    //line we are going to go to next (overrides current line if present)
-    this.textPresentation = "instant";  //instant, typed
-    this.typeSpeed = 1;                 //typing speed for typing effects
-    this.format = format;               //nodiv, sequential, single (nothing, stack, one at a time)
+    this.dialogueTree;                     //the text file, split into an array
+    this.format = format;               //single-line, stacked, etc
+    this.defaultItemType = 'dialogue';
+    this.itemType = 'dialogue';           //different from format. can't think of a better name! dialogue,choice,skip
     this.isBusy = false;                //is it doing an animation (like typing)
-    this.lineArray;                     //the text file, split into an array
-    this.skipping = false;              //are they trying to skip (ends animation)
+    this.fastForward = false;              //are they trying to skip (ends animation)
     this.nextSound = null;              //generic sound. idk if they should layer
-    this.runFunction = null;            //function to run, if there is one. a little picky.
-    this.character = new mysDL.mystereCharacter(); //currently speaking character
-    this.lastCharacter = null;          //last character
+    this.lastCharacter = null;          //last character displayed
     this.showPortrait = true;
+    this.choiceArray= [];
+    this.choiceObjectStack = [];
+    this.doUpChoice=[];
+    this.stopGoingDeeper = false;
+    this.ended = false; //are we done with the dialogue
   },
   //we keep all our dialogue elements in here
   dialogueObjectArray: [],
   //DESIGNATING A DIALOGUE ELEMENT & putting it in our array
   addDialogue: function(id,url,format) {
-    //console.log(id, url, format);
     id = new this.dialogueObject(id,url,format);
     this.dialogueObjectArray.push(id);
   },
-  //we keep all our characters in here. ADDED TO VIA EXTERNAL FILES (mysDL.addCharacter())
+  //we keep all our characters in here. ADDED TO VIA EXTERNAL FILES (mys.DLG.addCharacter())
   characterArray: [],
   //MAKING A NEW CHARACTER OBJECT and putting it in the character array (this way we can add characters anywhere)
   //also adding character style (nameText) to the stylesheet. can be overridden in css or with code, etc
@@ -108,7 +116,7 @@ var mysDL = {
       order:-1;      
     }
     .dialogueElement.single .dialogueBox{
-      grid-template-columns: 15% auto;    
+      grid-template-columns: 15% auto;
     }
     
     .dialoguePortrait{
@@ -144,20 +152,38 @@ var mysDL = {
     .dialogueBox.left .dialoguePortrait{
       order:-1
     }
+
+    .dialogueElement.single .choiceBox {
+      margin-top:-40%;
+      grid-template-columns: 100%;
+      grid-template-rows: auto auto;
+      background-color:gray;
+    }
+    .choiceBox {
+       display:grid;
+       padding:5px;
+    }
+    .dialogueChoice:hover {
+      text-decoration:underline;
+    }
+    choiceBox .clicked {
+      text-decoration:underline;
+    }
   `,
   
   
   // === WINDOW LOAD ==
   addListeners: function() {window.addEventListener("load", function(event) {
-    mysDL.dialogueObjectArray.forEach((dialogueObject) => {
+    mys.DLG.dialogueObjectArray.forEach((dialogueObject) => {
       let elementid = dialogueObject.id;
       let dialogueElement = document.querySelector('#'+elementid);
       
       //why is the browser suddenly refusing to update this??? what is different from the original implementation?????????????
       //split our text files
       $.get(dialogueObject.url, function(data){
-          mysDL.parseSource(data);
-          //dialogueObject.lineArray = rawLines;
+          dialogueObject.dialogueTree = mys.DLG.parseSource(data);
+          //set default parent
+          dialogueObject.currentParent = dialogueObject.dialogueTree;
       });      
       
       //Format-based setup. Format can be changed later (if you really want to??? why??) but this determines how the containing element will behave
@@ -172,7 +198,7 @@ var mysDL = {
       }
       //add the listener that calls our advance line function on click
       dialogueElement.addEventListener("click", function() {
-          mysDL.advanceLine(this);
+          mys.DLG.advanceLine(this);
       })
       
       //give it the dialogueElement & clickable classes
@@ -182,17 +208,18 @@ var mysDL = {
     })
     //add the dialogueElement css to the stylesheet
     let dialogueStyleSheet = document.createElement("style");
-    dialogueStyleSheet.textContent = mysDL.mystereDialogueStyles;
+    dialogueStyleSheet.textContent = mys.DLG.mystereDialogueStyles;
     document.head.appendChild(dialogueStyleSheet);
   })},
   
   // === PARSING DIALOGUE INTO OBJECT TREES ===
   //concept:
-  //first, get our array. make it into a set of objects with depth & text properties. then sort into tree by depth
+  //first, get our array. make it into a set of objects with depth & text properties. then sort into tree by depth.
+  //as we do this, store modifiers in the properties of each line object. only apply them to children & subsequent entries on the same layer.
   parseSource: function(source){
     //i have not eaten since lunch
-    let rawLines = source.split("\n");
-    let cookedLines;
+    let rawLines = source.split("\n").filter(line => !line.startsWith("//")); //filter out comment lines
+  
     //count & remove leading tabs + spaces, organize into an object
     let prepLine = function(line){
       let countLeadingTabs = function(line) {
@@ -200,113 +227,183 @@ var mysDL = {
         const match = line.match(tabRegex);
         return match ? match[0].length : 0;
       }
+
+
       let preppedLine = {
         depth: countLeadingTabs(line),
-        text: line.replace(/^(\t|    )*/g, ''),
+        text: line.replace(/^(\t|    )*/g, '').replace(/\r$/, ''), //remove returns and leading spaces/tabs
       }
       return preppedLine;
     }
 
+    //where da magic happens. stack logic from stacked overflow so i am still wrapping my mind around it
     let makeTree = function(source){
+        //make our root & our working stack
         const tree = {
           title: 'root',
           children: []
         };
-        const ptrs = [[0, tree]]; // stack
-        
+        const stack = [[0, tree]]; // stack
+        //for each line in the line array..
         for (let line of source){
+          //assigning variables from prepLine object
+          
           const [depth, text] = [prepLine(line).depth,prepLine(line).text];
-          while (ptrs.length && ptrs[ptrs.length-1][0] >= depth)
-            ptrs.pop();
-          parent = ptrs.length ? ptrs[ptrs.length-1][1] : tree;
+          //folder at the top of our stack is the last examined.
+          //if recent folders have higher or equal depth, then remove them until we hit
+          //something with lower. that is our parent
+          while (stack.length && stack[stack.length-1][0] >= depth){
+            stack.pop();
+          }
+          //if the current stack is not empty, set parent to the next stack up. if it is, then parent is root
+          parent = stack.length ? stack[stack.length-1][1] : tree;
+
+          //make a new object with our properties & then children
           const obj = {text: text, depth: depth, children: []};
+          //add our object to the parent stack's children array
           parent.children.push(obj);
-          ptrs.push([depth, obj]);
+          //put this object on top of the stack (marking it as last examined)
+          stack.push([depth, obj]);
         }
         return tree;
       }
 
-    console.log(makeTree(rawLines))
-    /*rawLines.forEach((line)=> 
-      
-      //console.log(prepLine(line))
-    )*/
+    return makeTree(rawLines);
+
   },
 
-  // == LINE ADVANCE ==
+  // === LINE ADVANCE === 
   //called when line is advanced by any means
   advanceLine: function(dialogueElement) {
       let dialogueObject = this.dialogueObjectArray.find(({ id }) => id === dialogueElement.id);
       //dialogueElement is our DOM element. dialogueObject is our storage object. yippee!
-       
+      //if we are out of bounds, shut that shit DOWN
       if (dialogueObject.isBusy) {
-        dialogueObject.skipping = true;
-      } else {
-        //check if we are at the end of the array. do not progress if not. maybe add a 'no' sound to this later
-        if (dialogueObject.line < dialogueObject.lineArray.length) {
-          
-          
-          // ===APPLY MODIFIERS===
-          let parse = function() {
-                    //check for modifiers here: this lets us directly modify properties in the dialogue object. we can also run arbitrary functions if we want (good for many things!) 
-            if (dialogueObject.lineArray[dialogueObject.line].startsWith("[")) {    
-              let pairs =  dialogueObject.lineArray[dialogueObject.line].slice(1,-1).split('||');
-                for (const pair of pairs) {
-                let [key, value] = pair.split('::');
-                //if the key matches any keys in dialogueObject, set it
-                for (var modKey of Object.keys(dialogueObject)) {
-                  if (modKey == key) {
-                    dialogueObject[modKey] = value;
-                    //if it's a character NAME property, then we actually want to take the relevant object from characterArray
-                    if (modKey == 'character') {
-                      dialogueObject.character = mysDL.characterArray.find(({ name }) => name === value);
-                    }
-                }
-                //if the key matches any keys in dialogueObject.character, set it
-                for (modKey of Object.keys(dialogueObject.character)) {
-                  if (modKey == key) {
-                    dialogueObject.character[modKey] = value;
-                  }
-                }
-              }
-            }
-                          console.log('incrementing line (parse skip)');
-              dialogueObject.line++; //skip the line
+        dialogueObject.fastForward = true;
+      } else if (dialogueObject.ended == false /*&& dialogueObject.state.line <= Object.keys(dialogueObject.<CURRENTDEPTH>.children).length*/){
+
+
+          // == TREE TRAVERSAL ==
+          //This is kind of a mess i will clean it up "later"
+          let treeTraverse = {
+            goDown: function (){
+                dialogueObject.lineTreeStack.push(dialogueObject.currentParent) //remembering the next lineindex for when we go back up  
+                dialogueObject.currentParent = dialogueObject.currentLine;
+                dialogueObject.lineIndexStack.push(0);
+                dialogueObject.stateStack.push({...dialogueObject.state});
+              
+            },
+            incrementSameLayer: function() {
+              let index = dialogueObject.lineIndexStack.pop()
+              dialogueObject.lineIndexStack.push(index + 1);
+              dialogueObject.currentLine = dialogueObject.currentParent.children[index];
             }
           }
-          parse();
-          
-          //skip line if told via lineTarget
-          if (dialogueObject.lineTarget != null) {
-            console.log('a');
-            dialogueObject.line = dialogueObject.lineTarget-1;
-            dialogueObject.lineTarget = null;
-            parse();
+          //parseLine 
+          let parseLine = function(line) {
+            //[localvariable::value],[#flag::value],[^globalvariable::value]
+            //{readvariable} (same shorthand applies)
+            //!!dialogue engine command
+            //= INSERT INLINE VARIABLES =
+            let inline = line.substring(line.indexOf("{") + 1, line.indexOf("}"));
+            let inlineParsed = mys.DLG.accessMysKey(inline,undefined,dialogueObject)
+            dialogueObject.currentLine.text = line.replace("{"+inline+"}",inlineParsed)
+            //= SET VARIABLES =
+            if (line.startsWith("[")){
+              let pairs =  line.slice(1,-1).split('||');
+              for (const pair of pairs){
+                let [key,value] = pair.split('::');
+                mys.DLG.accessMysKey(key,value,dialogueObject)
+              }
+              //now skip
+              dialogueObject.itemType = "skip"
+              return;
+            }
+            //= SET CHARACTER = (can be done with variables, but i think ultra-shorthand is convenient)
+            else if (line.startsWith("--")){
+              mys.DLG.accessMysKey(line,undefined,dialogueObject)
+              dialogueObject.itemType = "skip"
+              return;
+            }
+            //= ENGINE COMMANDS =
+            else if (line.startsWith("!!")){
+              //similar deal... break up into an array by spaces
+              slicedLineArray = line.slice(2).split(' ');
+              console.log(slicedLineArray)
+
+              let conditionalType;
+              if(slicedLineArray[0]=="WHEN"||slicedLineArray[0]=="UNLESS") {
+                conditionalType = slicedLineArray[0];
+                slicedLineArray[0]="CONDITIONAL";
+              }
+              switch(slicedLineArray[0]) {
+                case "CHOICE":
+                  console.info("== ENTERING CHOICE MODE ==")
+                  if (dialogueObject.itemType == "choice") {
+                    console.error("double choice??!?! that can't be right!")
+                  } else { 
+                    dialogueObject.itemType = "choice"
+                    dialogueObject.choiceObjectStack.push(dialogueObject.currentLine);
+                    dialogueObject.choiceObjectStack.at(-1).index = dialogueObject.lineIndexStack.at(-1);
+                    dialogueObject.choiceObjectStack.at(-1).state = dialogueObject.state;
+                  }
+                break;
+                //conditionals. we want some kind of "check if applies" function, i think...
+                //split by :: into key/value.
+                //if no value, we are checking for boolean. if value, we are checking for value
+                case "CONDITIONAL":
+                  let [key, value] = slicedLineArray[1].split('::');
+                  let showLine = false;
+                  let result = mys.DLG.accessMysKey(key, undefined, dialogueObject);
+                  if (value) {
+                    if (conditionalType == "WHEN" && result == value) {showLine=true}
+                    else if ( conditionalType == "UNLESS" && (result != value)) {showLine=true}
+                  }
+
+                  //assumes boolean if not specified. This is kind of dirty, what if we want to check if a variable is simply not undefined?
+                  else {
+                    if (conditionalType == "WHEN" && (result == true || result == "true")) {showLine=true}
+                    else if (conditionalType == "UNLESS" && (result != true && result != "true")) {showLine=true}
+                  }
+
+                  if(showLine){
+                    if(dialogueObject.itemType!="choice"){dialogueObject.itemType = "skip"}
+                    else {}
+                  } else if(!showLine) { //just for my own readability
+                    if(dialogueObject.itemType!="choice"){dialogueObject.itemType = "skipobject"}
+                    else {dialogueObject.currentLine.stopper = true} //tells makeChoiceArray to stop at this line
+                  }
+                break;
+                case "NEXT":
+                //do nothing, this is default behavior lol lmao
+                  dialogueObject.itemType = "skip"
+                break;
+                case "UP":
+                  dialogueObject.itemType = "skip"
+                  if (slicedLineArray[1]) {
+                    dialogueObject.doUpChoice[1] = slicedLineArray[1]
+                  } else {
+                    dialogueObject.doUpChoice[1] = -1;
+                  }
+                  dialogueObject.doUpChoice[2] = 0;
+                break;
+              }
+            }
+            //return text from current line
+            //return(dialogueObject.currentLine.text)
           }
 
-          // ===RUN FUNCTION===
-              //run our function if we have one. 
-              //this is so incredibly jankily done. i will revisit it i promise.
-              //oh we can put all the special functions in an object and check against that :) 
-              if (dialogueObject.runFunction != null) {
-                let split = dialogueObject.runFunction.split(/(.+)\((.+)\)/)
-                if (split[2] == null) {
-                  window[split[0].toString()]()
-                } else {
-                window[split[1]](split[2])
-                }
-              }
-              
-              
-              // ===TEXT DISPLAY===
-              //Now we place the text!! This first section is the different ways we can do that.
-              //Further down is the switch statement controlling which function is used
-                
+
+          // ===TEXT DISPLAY===
+          //Different ways to display text after it is placed. 
                 //text typing effect
                 const printSentence = (id, sentence, speed) => {
                   let index = 0;
                   let scrollCounter = 0;
                   let element = document.getElementById(id);
+                  if (!sentence.startsWith("<")){
+                    sentence = "<span>" + sentence + "</span>"
+                  }
                 
                   let timer = setInterval(function() {
                       dialogueObject.isBusy = true;
@@ -316,13 +413,13 @@ var mysDL = {
                         index = sentence.indexOf('>', index);  // skip to greater-than
                       }
                       
-                      //If skipping is true, then skip to the end of the sentence
-                      if (dialogueObject.skipping == false) { 
+                      //If fastForward is true, then skip to the end of the sentence
+                      if (dialogueObject.fastForward == false) { 
                         element.innerHTML = sentence.slice(0, index);
                         } else { 
                         element.innerHTML = sentence.slice(0, sentence.length); 
                         index = sentence.length-1;
-                        dialogueObject.skipping = false;
+                        dialogueObject.fastForward = false;
                         }
                       function scrollBottom() {
                         dialogueElement.scrollTo({
@@ -344,106 +441,398 @@ var mysDL = {
                       }
                     }, speed);
                   } 
-              
-              
-              // ===ADDING DIALOGUE===
-              let makeDialogue = {
-                // MULTIPURPOSE: INSERT PORTRAIT
-                insertPortrait: function (element) {
-                //if the portrait is not null
-                //if the character is not different from before and showPortrait is true 
-                //OR if it's in single mode... display the portrait
-                  if (((dialogueObject.character.portrait != null) && ((dialogueObject.showPortrait == true) && (dialogueObject.character != dialogueObject.lastCharacter)))|| (dialogueObject.format == "single")) {
-                        let dialoguePortraitDiv = document.createElement("div");
-                        let img = document.createElement("img")
-                        img.src = dialogueObject.character.portrait;
-                        dialoguePortraitDiv.classList.add("dialoguePortrait");
-                        dialoguePortraitDiv.appendChild(img);          
-                      return(dialoguePortraitDiv);
-                    } else {
-                      let div =  document.createElement("div");
-                      div.classList.add("dialoguePortrait");
-                      return(div)
-                    }
-                },
-                // MULTIPURPOSE: INSERT TEXT
-                insertText: function() {
-                  let dialogueText = document.createElement("div");
-                  dialogueText.classList.add("dialogueText");
-                  dialogueText.classList.add(dialogueObject.character.name+'Text');
-                  dialogueText.id = dialogueObject.id+'line'+dialogueObject.line;
-                  return(dialogueText);
-                },
-                // MULTIPURPOSE: PRESENT TEXT
-                presentText: function(element) {
-                  switch(dialogueObject.textPresentation) {
-                    case "instant":
-                      element.innerHTML = dialogueObject.lineArray[dialogueObject.line];
-                    break;
-                    case "typed":
-                      printSentence(element.id,dialogueObject.lineArray[dialogueObject.line],dialogueObject.typeSpeed);
-                    break;
-                  }
-                },
-                
-                //MAKING DIALOGUE DIV (3)
-                makeDialogue: function () {
-                  //make the dialogue box
-                  let dialogueBox = document.createElement("div");
-                  dialogueBox.classList.add("dialogueBox");
-                  //give it left/right class depending on portrait position
-                  dialogueBox.classList.add(dialogueObject.character.position);
+
                   
-                  //insert portrait if applicable
-                  let portrait = this.insertPortrait(dialogueBox);
-                  dialogueBox.appendChild(portrait);
-                  
-                  //insert text
-                  let text = this.insertText();
-                  dialogueBox.appendChild(text);
-                  return dialogueBox;
-                },
-    
-                //PLACING DIALOGUE DIV (2)
-                placeDialogue: function(element) {
-                  let dialogueBox = makeDialogue.makeDialogue();
-                  switch(dialogueObject.format) {
-                    case "nodiv": //do nothing if told
-                    break;
-                    case "sequential": //stack dialogue
-                      element.appendChild(dialogueBox);
-                      this.presentText(dialogueBox.querySelector(".dialogueText"))
-                      
-                    break;
-                    case "single": //display one line at a time
-                      element.firstChild.replaceWith(dialogueBox);
-                      this.presentText(element.querySelector(".dialogueText"))
-                    break;
-                  }
-                  
+          // == ADDING DIALOGUE ==
+          let makeDialogue = {
+            // MULTIPURPOSE: INSERT PORTRAIT
+            insertPortrait: function (element) {
+            //if the portrait is not null
+            //if the character is not different from before and showPortrait is true 
+            //OR if it's in single mode... display the portrait
+              if (((dialogueObject.state.character.portrait != null) && ((dialogueObject.showPortrait == true) && (dialogueObject.state.character != dialogueObject.lastCharacter))) || (dialogueObject.format == "single") || dialogueObject.forcePortrait) {
+                    let dialoguePortraitDiv = document.createElement("div");
+                    let img = document.createElement("img")
+                    img.src = dialogueObject.state.character.portrait;
+                    dialoguePortraitDiv.classList.add("dialoguePortrait");
+                    dialoguePortraitDiv.appendChild(img); 
+                    dialogueObject.forcePortrait = false;         
+                  return(dialoguePortraitDiv);
+                } else {
+                  let div =  document.createElement("div");
+                  div.classList.add("dialoguePortrait");
+                  return(div)
                 }
+            },
+            // MULTIPURPOSE: INSERT TEXT
+            insertText: function() {
+              let dialogueText = document.createElement("div");
+              dialogueText.classList.add("dialogueText");
+              dialogueText.classList.add(dialogueObject.state.character.name+'Text');
+              dialogueText.id = dialogueObject.id+'line'+dialogueObject.lineIndexStack.at(-1)+'depth'+dialogueObject.currentLine.depth;
+              return(dialogueText);
+            },
+            // MULTIPURPOSE: PRESENT TEXT
+            presentText: function(element) {
+              switch(dialogueObject.state.textPresentation) {
+                case "instant":
+                  element.innerHTML = dialogueObject.currentLine.text;
+                break;
+                case "typed":
+                  printSentence(element.id,dialogueObject.currentLine.text,dialogueObject.state.typeSpeed);
+                break;
+              }
+            },
+            
+            //MAKING DIALOGUE DIV (3)
+            makeDialogue: function () {
+              //make the dialogue box
+              let dialogueBox = document.createElement("div");
+              dialogueBox.classList.add("dialogueBox");
+              //give it left/right class depending on portrait position
+              dialogueBox.classList.add(dialogueObject.state.character.position);
+              
+              //insert portrait if applicable
+              let portrait = this.insertPortrait(dialogueBox);
+              dialogueBox.appendChild(portrait);
+              
+              //insert text
+              let text = this.insertText();
+              dialogueBox.appendChild(text);
+              return dialogueBox;
+            },
+
+            //PLACING DIALOGUE DIV (2)
+            placeDialogue: function(element) {
+              let dialogueBox = makeDialogue.makeDialogue();
+              
+              switch(dialogueObject.format) {
+                case "sequential": //stack dialogue
+                  element.appendChild(dialogueBox);
+                  this.presentText(dialogueBox.querySelector(".dialogueText"))
+                  //this.presentText(dialogueBox.querySelector('#'+dialogueObject.id+'line'+dialogueObject.lineIndexStack.at(-1)))
+                break;
+                case "single": //display one line at a time
+                  element.firstChild.replaceWith(dialogueBox);
+                  this.presentText(element.querySelector(".dialogueText"))
+                  //this.presentText(element.querySelector('#'+dialogueObject.id+'line'+dialogueObject.lineIndexStack.at(-1)))
+                break;
               }
               
-              makeDialogue.placeDialogue(dialogueElement);
-              //now that we are done, increment the dialogue line & set our lastCharacter
-              dialogueObject.lastCharacter = dialogueObject.character;
-              console.log('incrementing line (end)');
-              dialogueObject.line++;          
-          } else {
-            //if we have hit the end of the list, remove clickable
-            dialogueElement.classList.remove("clickable");
+            }
           }
-         
-        }  
+
+          // == ADDING A CHOICE BOX ==
+          let makeChoice = {
+            // INSERT CHOICE BUTTONS
+            insertChoice: function(choice) {
+              choiceText = choice.text.slice(0,-1)
+              let dialogueChoice = document.createElement("div");
+              dialogueChoice.classList.add("dialogueChoice");
+              dialogueChoice.classList.add("clickable")
+              dialogueChoice.id = dialogueObject.id+'choice'+choiceText;
+              dialogueChoice.innerHTML = choiceText;
+
+              //When clicked, a choice will push its line to the fore + remove eventlisteners/adjust classes on all dialogueChoices in the object, thus:
+              // SELECT CHOICE
+              dialogueChoice.addEventListener('click', function selectChoice(){ 
+                  let goDown = function(){
+                    dialogueObject.lineTreeStack.push(dialogueObject.currentParent) //remembering the next lineindex for when we go back up  
+                    dialogueObject.currentParent = choice;
+                    dialogueObject.lineIndexStack.push(0);
+                    dialogueObject.stateStack.push({...dialogueObject.state});
+                  }
+                  goDown();
+                  
+                  this.classList.add("clicked")
+                  allChoices = dialogueElement.querySelectorAll(".dialogueChoice")
+                  for (let i = 0; i < allChoices.length; i++) {
+                    console.log(allChoices[i])
+                    allChoices[i].classList.remove("dialogueChoice")
+                    allChoices[i].classList.remove("clickable")
+                    allChoices[i].replaceWith(allChoices[i].cloneNode(true));
+                  }
+                  
+                  dialogueObject.isBusy = false;
+                  dialogueElement.classList.add("clickable")
+                  if (dialogueObject.format == "single") {
+                    dialogueElement.querySelector(".choiceBox").remove()
+                  }
+              })
+              console.info("== EXITING CHOICE MODE ==")
+              return(dialogueChoice);
+            },
+            // PLACE CHOICE BOX
+            placeChoice: function(){
+              //make flexbox and fill with choicearray contents
+              //make the dialogue box
+              let dialogueBox = document.createElement("div");
+              dialogueBox.classList.add("dialogueBox");
+              dialogueBox.classList.add("choiceBox");
+              
+
+              //insert text, clear choicearray
+              for (let choice of dialogueObject.choiceArray){
+                let choiceDiv = this.insertChoice(choice);
+                dialogueBox.appendChild(choiceDiv);
+              }
+              dialogueObject.choiceArray = [];
+
+              //APPEND BOX
+              switch(dialogueObject.format) {
+                case "sequential": //stack dialogue
+                  dialogueElement.appendChild(dialogueBox);
+                break;
+                case "single": //display one line at a time
+                  dialogueElement.appendChild(dialogueBox);
+                break;
+              }
+
+              //Mark busy, remove clickable tag
+              dialogueObject.isBusy = true;
+              dialogueElement.classList.remove("clickable")
+            },
+            // MAKE CHOICE ARRAY (run through the whole tree)
+            makeChoiceArray: function(){
+              if (dialogueObject.currentLine.text.endsWith(":") || dialogueObject.currentLine.stopper == true){
+                if(!dialogueObject.currentLine.stopper) {dialogueObject.choiceArray.push(dialogueObject.currentLine)} //for if it hit a conditional
+                //console.log(dialogueObject.choiceArray)
+                dialogueObject.stopGoingDeeper = true;
+              } else {
+                dialogueObject.stopGoingDeeper = false;
+              }
+            },
+          }
+
+          // == DO LINE (this is the set of events through which we display lines!!!)
+          //called in the middle of readTree()
+          let doLine = function(line){
+            //parse the line, apply modifiers, etc
+            parseLine(line);
+            //place dialogue or place choices, with potential to add more modes in the future
+            switch (dialogueObject.itemType) {
+              case "dialogue":
+                makeDialogue.placeDialogue(dialogueElement);
+                dialogueObject.lastCharacter = dialogueObject.state.character;
+                dialogueObject.stopGoingDeeper = false; 
+                break;
+              case "choice":
+                makeChoice.makeChoiceArray()
+                dialogueObject.doSkip = true;
+                break;
+              case "skip":
+                dialogueObject.itemType = dialogueObject.defaultItemType;   //reset item type
+                dialogueObject.doSkip = true;                      //move forward
+                dialogueObject.stopGoingDeeper = false;
+                break;
+              case "skipstay":
+                dialogueObject.itemType = dialogueObject.defaultItemType;   //reset item type
+                dialogueObject.stopGoingDeeper = false;
+                break;
+              case "skipobject":
+                dialogueObject.itemType = dialogueObject.defaultItemType;   //reset item type
+                dialogueObject.doSkip = true;                      //move forward
+                dialogueObject.stopGoingDeeper = true;
+                break;
+            }
+            //dialogueObject.itemType = dialogueObject.defaultItemType;
+          }
+
+          // == READ TREE; START DISPLAY PROCESS ==
+          let readTree = function(insertObject){ 
+            //i hate it here. handheld through this by the wonderful ewoudje 
+            let index = dialogueObject.lineIndexStack.pop() //grab line index from top of stack
+            //console.log(index)
+            let direction = "forward";
+            function incrementNoPop(){
+              dialogueObject.lineIndexStack.push(index + 1);
+              //console.log('CURRENT PARENT (INCREMENTING)' )
+              //console.log(dialogueObject.currentParent)
+              dialogueObject.currentLine = dialogueObject.currentParent.children[index];
+
+            }
+            
+            //if instructed, go up and find the first choice so we can repeat it
+            function doUpChoice(){
+                let depth = dialogueObject.doUpChoice[1];
+                let next = dialogueObject.doUpChoice[2];
+                //this could maybe go in treeTraverse object for organization
+                let goUp = function() {
+                  dialogueObject.lineIndexStack.pop()
+                  dialogueObject.currentParent = dialogueObject.lineTreeStack.pop();
+                  dialogueObject.state = dialogueObject.stateStack.pop();
+                }
+                let targetChoice = dialogueObject.choiceObjectStack.at(depth)
+                if (depth == "ROOT"||depth=="root") {depth = -dialogueObject.choiceObjectStack.length;console.log(depth)}
+                //keep popping until we hit the right depth
+                while (dialogueObject.currentParent.depth != targetChoice.depth) {
+                  //if current parent is choice and we are still not there, add to the counter..
+                  if (dialogueObject.currentParent.text == "!!CHOICE") {          
+                  }
+                    console.log("PARENT / CHOICEOBJECT")
+                    console.log(dialogueObject.currentParent)
+                    console.log(targetChoice)
+                    goUp()
+                }
+                console.log("at the right depth of "+dialogueObject.currentParent.depth+ "with goal of "+ targetChoice.depth)
+                goUp()//pop again so we are on the right layer?
+                //then set our properties
+                console.log(dialogueObject.lineIndexStack)
+                //for desired depth, pop choiceObjectStack
+                for (i = 1; i<=(-depth); i++){
+                  console.log(i)
+                  dialogueObject.currentLine = dialogueObject.choiceObjectStack.pop()
+                  console.log(dialogueObject.currentLine)
+                }
+                dialogueObject.lineIndexStack.push(dialogueObject.currentLine.index-1+next) //-1 because otherwise it will try to skip the choice. cancel out if set to skip/next
+                dialogueObject.stateStack.push(dialogueObject.currentLine.state)
+                console.info("CURRENTLINE / INDEX")
+                console.log(dialogueObject.currentLine)
+                console.log(dialogueObject.lineIndexStack.at(-1))
+
+                dialogueObject.doUpChoice[1] = undefined;
+            }
+
+            //if we are at the end of the object, move to parent layer (default behavior)
+            if (index >= dialogueObject.currentParent.children.length)  { 
+              console.log('going up; end of object')
+              if (dialogueObject.currentParent == dialogueObject.dialogueTree && index >= dialogueObject.dialogueTree.children.length){
+                console.error('line index out of bounds, setting ended = true. this should have been marked properly in the script!')
+                dialogueObject.ended = true;
+              } else {            
+                let log = function() {
+                  console.info('=== CHOICEOBJECT / PARENT / DIR / STACK / CURRENT ===')
+                  console.log(dialogueObject.choiceObjectStack.at(-1))
+                  console.log(dialogueObject.currentParent)
+                  console.log(direction)
+                  console.log(dialogueObject.lineIndexStack)
+                  console.log(dialogueObject.currentLine)
+                } 
+                //log();                   
+                dialogueObject.currentParent = dialogueObject.lineTreeStack.pop();
+                dialogueObject.state = dialogueObject.stateStack.pop();
+                readTree()
+                return;
+              }
+            }
+
+            
+            //increment our index (storing it on top of the stack), get our current line with it
+              incrementNoPop();
+              // = PARSE LINE, DO THE COOL STUFF!! =
+              doLine(dialogueObject.currentLine.text)
+              console.log(dialogueObject.currentLine)
+              //if our current line has children, go down a layer
+              if(!dialogueObject.stopGoingDeeper) {
+                if (dialogueObject.currentLine.children !== undefined && dialogueObject.currentLine.children.length > 0) {
+                  console.log('gone deeper :)')
+                  treeTraverse.goDown();
+                }
+              }
+
+
+            //if we hit the end of our choice object while gathering arrays..
+            if (dialogueObject.itemType=="choice" && (dialogueObject.currentParent == dialogueObject.choiceObjectStack.at(-1)) && (dialogueObject.lineIndexStack.at(-1) >= dialogueObject.currentParent.children.length)){
+              
+              makeChoice.placeChoice();
+              dialogueObject.forcePortrait = true;
+              dialogueObject.itemType = dialogueObject.defaultItemType;
+              dialogueObject.doSkip = false;
+            }  //if we hit our root choice object while traveling upward..
+            
+            //if we are told to go UP, keep going until we hit our desired choice marker and rerun it
+            if (dialogueObject.doUpChoice[1]) {
+              console.info("LOOKING FOR CHOICE")  
+              doUpChoice();
+            }
+
+            if (dialogueObject.doSkip) {
+                dialogueObject.doSkip = false;
+                readTree();
+              }
+          }
+
+
+            
+          readTree();
+      }  
+  },
+
+  // === UTILITIES ===
+  //returns a variable or function from an address given in a string, accounting for the .mys script notation
+  //everything here is within the mys object
+  accessMysKey: function(key, value, dialogueObject) {
+    let parsedKey;
+    let object;
+    let functionArgs;
+    //if this has a function argument in it, we will save that for later
+    if(key.endsWith(")")) {
+      functionArgs = key.substring(key.indexOf("(")+1, key.indexOf(")"));
+      key = key.replace("("+functionArgs+")", "");
+    }
+    //FLAG (in save file)
+    if (key.startsWith("#")) {
+      parsedKey = key.slice(1)
+      if(value){_.set(mysFLG,parsedKey,value)}else{object = _.get(mysFLG,parsedKey)}
+    }
+    //GLOBAL (whatever we want, anywhere in mys)
+    else if (key.startsWith("^")) {
+      if (key.startsWith("^mys.")){
+        parsedKey = key.slice(5)
+      } else {
+        parsedKey = key.slice(1)
       }
+      if(value){_.set(mys,parsedKey,value)}else{object = _.get(mys,parsedKey)}
+    }
+    //CHARACTER (search characterArray & get it from there)
+    else if (key.startsWith("--")){
+      let charName = key.slice(2);
+      let char = mys.DLG.characterArray.find(({ name }) => name === charName);
+      if (!char){console.error("'"+value + "' is an invalid character!");};
+      value = char;
+      if(value){
+        if(dialogueObject){dialogueObject.state.character = char}
+      }else{object = char}
+    }
+    //LOCAL (in the dialogueObject. do not check unless one has been passed in)
+    else if (dialogueObject) {
+      //STATE (get from state if it is a property stored in state)
+      let inState = false;
+      for (varmodKey of Object.keys(dialogueObject.state)) {
+        if (varmodKey == key) {
+          if(value){_.set(dialogueObject.state,key,value)} else {object =_.get(dialogueObject.state,key)}
+          inState = true;
+        }
+      }
+      //NOT IN STATE (it is in the root of dialogueObject)
+      if (!inState) {
+        if(value){_.set(dialogueObject,key,value)} else {object =_.get(dialogueObject,key)}
+      }
+    }
+    if (object){
+      //RUN FUNCTION IF IT IS AN OBJECT !!
+      if (mys.UTL.isFunction(object)){
+        parsedKey = 'mys.'+parsedKey;
+        return mys.UTL.executeFunctionByName(parsedKey,window,functionArgs);
+      }
+      return object;
+    }
+
+  }
     
   }
 // ===ADD LISTENERS===
 //add listeners for dialogue triggers
-mysDL.addListeners();
+mys.DLG.addListeners();
 
+// ADD EMPTY CHARACTER (technical use)
+mys.DLG.addCharacter({name:'dlg-null',
+    portrait: mys.mystereFolder+"/assets/empty.png",
+    position:'right',
+    css:`
+    {
+      font-family: Times New Roman
+    }
+    `
+    });
 
-/*$.get("parsetest.txt", function(data){
-    console.log(data)
-    console.log(mysDL.parse(data))
-});*/
