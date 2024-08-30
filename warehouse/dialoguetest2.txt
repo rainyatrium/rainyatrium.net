@@ -1,5 +1,0 @@
-<span> This is some unrelated dialogue. </span>
-<span> Wow! </span>
-<span> wow. </span>
-<span> wow. </span>
-<span> wow. </span>
